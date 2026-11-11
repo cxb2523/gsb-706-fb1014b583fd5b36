@@ -11,6 +11,7 @@
 
 import * as THREE from 'three';
 import { GlyphAtlas } from './GlyphAtlas';
+import { charIndexForIntensity, dedupeCharset } from './charMapping';
 import type { RendererConfig } from './types';
 
 import commonVertSrc from './shaders/common.vert.glsl';
@@ -97,6 +98,10 @@ export class AsciiRenderer {
     if (patch.edgeWeight !== undefined)
       this.asciiMat.uniforms['uEdgeWeight'].value = patch.edgeWeight;
 
+    // Uniform-only update — must NOT trigger an atlas rebuild
+    if (patch.directionWeight !== undefined)
+      this.asciiMat.uniforms['uDirectionWeight'].value = patch.directionWeight;
+
     if (patch.contrast !== undefined)
       this.asciiMat.uniforms['uContrast'].value = patch.contrast;
 
@@ -181,8 +186,10 @@ export class AsciiRenderer {
 
   /**
    * Convert the current rendered frame to plain ASCII text via a 2D canvas
-   * pixel readback. High-luminance cells map to dense charset characters,
-   * low-luminance cells map to sparse ones.
+   * pixel readback.  Uses the same index semantics as the GPU pass
+   * (ascii.frag.glsl): the charset is dense-to-sparse with index 0 densest,
+   * and the index is floor(intensity * (charCount - 1)) over the
+   * DEDUPLICATED charset — the same charCount the shader receives.
    */
   generateAsciiText(): string {
     const src = this.renderer.domElement;
@@ -198,9 +205,12 @@ export class AsciiRenderer {
     const { data: px } = ctx.getImageData(0, 0, w, h);
 
     const { cellSize, charset } = this.config;
-    const n    = charset.length;
-    const cols = Math.max(1, Math.floor(w / cellSize));
-    const rows = Math.max(1, Math.floor(h / cellSize));
+    // The atlas (and therefore the shader's uCharCount) is built from the
+    // deduplicated charset — index into the same deduplicated sequence.
+    const chars = dedupeCharset(charset);
+    const n     = chars.length;
+    const cols  = Math.max(1, Math.floor(w / cellSize));
+    const rows  = Math.max(1, Math.floor(h / cellSize));
     const lines: string[] = [];
 
     for (let row = 0; row < rows; row++) {
@@ -219,10 +229,9 @@ export class AsciiRenderer {
           }
         }
         const lum = cnt > 0 ? sum / (cnt * 255) : 0;
-        // Dense charset chars are at index 0 (@), sparse/space at index n-1.
-        // High luminance = more fg pixels = denser character = lower index.
-        const idx = Math.min(n - 1, Math.floor((1 - lum) * n));
-        line += charset[idx];
+        // Same mapping as the shader: floor(intensity * (charCount - 1)).
+        const idx = charIndexForIntensity(lum, n);
+        line += chars[idx];
       }
       lines.push(line);
     }
@@ -288,6 +297,7 @@ export class AsciiRenderer {
         uCellCount:  { value: new THREE.Vector2(cols, rows) },
         uAtlasDims:  { value: new THREE.Vector2(metrics.cols, metrics.rows) },
         uEdgeWeight: { value: this.config.edgeWeight },
+        uDirectionWeight: { value: this.config.directionWeight ?? 0 },
         uContrast:   { value: this.config.contrast },
         uFgColor:    { value: new THREE.Color(this.config.fgColor) },
         uBgColor:    { value: new THREE.Color(this.config.bgColor) },

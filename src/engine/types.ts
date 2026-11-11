@@ -9,6 +9,12 @@ export interface RendererConfig {
   charset: string;
   /** [0,1] — 0 = luminance-only mapping, 1 = edge-only mapping */
   edgeWeight: number;
+  /**
+   * [0,1] — 0 (default) = edge direction ignored, character selection is
+   * intensity-only (legacy behaviour); higher values bias the character
+   * index by the edge-orientation bucket read from the EdgeFBO angle channel.
+   */
+  directionWeight?: number;
   /** Luminance contrast multiplier applied before character selection. */
   contrast: number;
   /** CSS hex colour for foreground (character) pixels. */
@@ -39,12 +45,13 @@ export interface GlyphMetrics {
 export const DEFAULT_CHARSET = '@#MW&8B%$XoahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,"^`. ';
 
 export const DEFAULT_RENDERER_CONFIG: Readonly<RendererConfig> = {
-  cellSize:   8,
-  charset:    DEFAULT_CHARSET,
-  edgeWeight: 0.5,
-  contrast:   1.2,
-  fgColor:    '#00ff41', // terminal green
-  bgColor:    '#000000',
-  fontFamily: 'monospace',
-  fontSize:   12,
+  cellSize:        8,
+  charset:         DEFAULT_CHARSET,
+  edgeWeight:      0.5,
+  directionWeight: 0,
+  contrast:        1.2,
+  fgColor:         '#00ff41', // terminal green
+  bgColor:         '#000000',
+  fontFamily:      'monospace',
+  fontSize:        12,
 };

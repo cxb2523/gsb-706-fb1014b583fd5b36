@@ -97,6 +97,20 @@ export function ControlPanel({
           </ControlRow>
 
           <ControlRow
+            label="Direction Weight"
+            value={(config.directionWeight ?? 0).toFixed(2)}
+          >
+            <Slider
+              label="Direction weight"
+              value={config.directionWeight ?? 0}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => onConfigChange({ directionWeight: v })}
+            />
+          </ControlRow>
+
+          <ControlRow
             label="Contrast"
             value={config.contrast.toFixed(2)}
           >

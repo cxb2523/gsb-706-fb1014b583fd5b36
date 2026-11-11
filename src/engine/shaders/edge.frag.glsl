@@ -8,8 +8,9 @@
 //   b = centre luminance    (0..1, passed through for character selection)
 //   a = 1.0
 //
-// The angle channel is reserved for future directional-character selection
-// (e.g. choosing '/' vs '\' vs '|' vs '-' based on edge orientation).
+// The angle channel drives direction-aware character selection in Pass 2
+// (choosing different characters for different edge orientations when
+// uDirectionWeight > 0 in ascii.frag.glsl).
 precision highp float;
 
 uniform sampler2D uSource;

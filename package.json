@@ -15,6 +15,7 @@
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "test": "node --test \"tests/**/*.test.ts\"",
     "audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {
